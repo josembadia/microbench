@@ -1,4 +1,5 @@
-# License
+License
+-------
 
 Copyright 2023-2024 Jose M. Badia <badia@uji.es> and German Leon <leon@uji.es>
 
