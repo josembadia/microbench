@@ -25,7 +25,59 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <dirent.h>
+#include <string.h>
 
+#define DEVFREQ_PATH "/sys/class/devfreq/"
+
+
+long int frec_now();
+
+long int frec_now() {
+    DIR *dir;
+    struct dirent *entry;
+
+    // Open the /sys/class/devfreq/ directory
+    dir = opendir(DEVFREQ_PATH);
+    if (dir == NULL) {
+        perror("Error opening directory");
+        exit(EXIT_FAILURE);
+    }
+
+    // Find the GPU frequency file dynamically
+    while ((entry = readdir(dir)) != NULL) {
+        if (strstr(entry->d_name, "gpu") != NULL) {
+            char gpu_freq_file_path[512];  // Increased buffer size
+
+            // Use sprintf with caution, ensure buffer size is sufficient
+            sprintf(gpu_freq_file_path, "%s%s/cur_freq", DEVFREQ_PATH, entry->d_name);
+
+            // Read GPU frequency from the file
+            FILE *file = fopen(gpu_freq_file_path, "r");
+            if (file != NULL) {
+                int gpu_freq;
+                fscanf(file, "%d", &gpu_freq);
+                fclose(file);
+
+                // Close the directory
+                closedir(dir);
+
+                return gpu_freq;
+            }
+        }
+    }
+
+    // If we reach here, GPU frequency file was not found
+    printf("Error: GPU frequency file not found.\n");
+
+    // Close the directory
+    closedir(dir);
+
+    // Return an error value, you might want to handle this appropriately
+    return -1;
+}
+
+/*
 long int frec_now();
 
 // Returns the current frequency of the GPU
@@ -38,3 +90,4 @@ long int frec_now() {
   fscanf (fdf,"%lu",&valor);
   return (valor);
 }	
+*/
