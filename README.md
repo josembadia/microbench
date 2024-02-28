@@ -23,4 +23,4 @@ where
 
 To fix the time of every test we compute the number of clock cycles based on the GPU frequency.
 
-
+The current GPU frequency is obtained from a system file whose absolute path must be included in the file jetson_nano.h
