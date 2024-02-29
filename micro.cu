@@ -302,7 +302,7 @@ int launch_kernel(char *bench, int grid, int blk, unsigned int nitocycles,int ti
  
 int main(int argc, char **argv) {
     unsigned int grid, blk, nitocycles;
-    long int frec;
+    long int freq;
     char *bench = (char *) malloc(4);
     bool time;
     unsigned long int long_nitocycles;
@@ -318,8 +318,8 @@ int main(int argc, char **argv) {
         exit(EXIT_SUCCESS);
     }
 
-    frec=frec_now(); // Get current frequency to compute time from cycles
-//    printf("GPU frequency: %lu \n", frec);
+    freq=freq_now(); // Get current frequency to compute time from cycles
+    printf("GPU frequency: %lu \n", freq);
     if (checkCmdLineFlag(argc, (const char **)argv, "bench")) {
         getCmdLineArgumentString(argc, (const char **)argv, "bench", &bench);
     }
@@ -341,7 +341,7 @@ int main(int argc, char **argv) {
     time=false;
     // Kernel time
     if (checkCmdLineFlag(argc, (const char **)argv, "time")) {
-        long_nitocycles = ((long int) (frec * getCmdLineArgumentFloat(argc, (const char **)argv, "time")));
+        long_nitocycles = ((long int) (freq * getCmdLineArgumentFloat(argc, (const char **)argv, "time")));
         nitocycles=(unsigned int) (long_nitocycles >> BITSNOSIGNIFICATIVOS);
         time=true;
     }
