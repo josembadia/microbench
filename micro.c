@@ -38,8 +38,9 @@
 #include "micro.h"
 
 #define DEVFREQ_PATH "/sys/class/devfreq/"
-//*define NVIDIA_SMI_COMMAND "nvidia-smi --query-gpu=clocks.current.sm --format=csv,noheader,nounits 2>/dev/null"
-#define NVIDIA_SMI_COMMAND "nvidia-smi --query-gpu=clocks.max.sm --format=csv,noheader,nounits 2>/dev/null"
+
+#define NVIDIA_SMI_COMMAND "nvidia-smi --id=$CUDA_VISIBLE_DEVICES --query-gpu=clocks.current.sm --format=csv,noheader,nounits 2>/dev/null"
+//#define NVIDIA_SMI_COMMAND "nvidia-smi --query-gpu=clocks.max.sm --format=csv,noheader,nounits 2>/dev/null"
 
 long int get_first_gpu_frequency_from_nvidia_smi() {
     FILE *nvidia_smi_pipe = popen(NVIDIA_SMI_COMMAND, "r");
@@ -142,7 +143,7 @@ int main(int argc, char **argv) {
     }
 
     freq=freq_now(); // Get current frequency to compute time from cycles
-//    printf("GPU frequency: %lu \n", freq);
+    printf("GPU frequency: %lu Hz\n", freq);
     if (checkCmdLineFlag(argc, (const char **)argv, "bench")) {
         getCmdLineArgumentString(argc, (const char **)argv, "bench", &bench);
     }
