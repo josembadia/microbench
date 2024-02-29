@@ -189,9 +189,9 @@ int main(int argc, char **argv) {
 
         if (blk > maxThreadsPerBlock) {
             printf("Error: User is launching more threads in a block than supported by the GPU: %d!\n", maxThreadsPerBlock);
+	    return 0;
         }
 
-	return 0;
 
     }
     else
