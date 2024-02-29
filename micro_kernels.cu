@@ -28,7 +28,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
-#include "jetson_nano.h"
 // CUDA runtime
 #include <cuda_runtime.h>
 
@@ -37,20 +36,7 @@
 #include <helper_cuda.h>
 #include <cuda_fp16.h>
 
-//#include "input_device.h"
-#define FREQ 921600000
-#define T 1
-#define BITSNOSIGNIFICATIVOS 16
-#define CYCLES (T*(FREQ) >> BITSNOSIGNIFICATIVOS)
-#define QUATUMINTERACIONES 1000
-#define SIZEROW 1
-
-#define myclock() (int) (clock64() >> BITSNOSIGNIFICATIVOS)
-
-//#define SIM_ERROR
-
-typedef int  btype;
-typedef btype *btypePtr;
+#include "micro.h"
 
 /**
  * Micro Kernel that performs the computation using only registers.
@@ -198,6 +184,7 @@ __global__ void microKernel_shared_time (unsigned int cycles, char *vadd) {
     vadd[(int) id - 1 ] = (sh[threadIdx.x] == id);
 }
 
+
 /**
   * Checks if there is any error in the result of any thread
   * cont returns the number of threads with a wrong result
@@ -212,10 +199,11 @@ bool check_error(char *h_vadd, int vsize, int *cont, int *id) {
     return (*cont == 0);
 }
 
+
 /**
- * Run microKernel
+ * Launch microKernel
  */
-int launch_kernel(char *bench, int grid, int blk, unsigned int nitocycles,int time) {
+int launch_kernel(char *bench, int grid, int blk, unsigned int nitocycles, int time) {
     char *h_vadd;
     char *d_vadd;
     btypePtr d_global;
@@ -295,91 +283,3 @@ int launch_kernel(char *bench, int grid, int blk, unsigned int nitocycles,int ti
     return correct;
 
 }
-
-/**
- * Program main
- */
- 
-int main(int argc, char **argv) {
-    unsigned int grid, blk, nitocycles;
-    long int freq;
-    char *bench = (char *) malloc(4);
-    bool time;
-    unsigned long int long_nitocycles;
-
-    if (checkCmdLineFlag(argc, (const char **)argv, "help") ||
-            checkCmdLineFlag(argc, (const char **)argv, "?")) {
-        printf("Usage -bench=bench_name ('shm', 'glb', 'reg')\n");
-        printf("      -grid=grid_size (Grid size)\n");
-        printf("      -blk=block_size (Thread block size)\n");
-        printf("      -nit=number_its (number of iterations)\n");
-        printf("      -time=time (time to run the microbenchark)\n");
-
-        exit(EXIT_SUCCESS);
-    }
-
-    freq=freq_now(); // Get current frequency to compute time from cycles
-    printf("GPU frequency: %lu \n", freq);
-    if (checkCmdLineFlag(argc, (const char **)argv, "bench")) {
-        getCmdLineArgumentString(argc, (const char **)argv, "bench", &bench);
-    }
-    else
-      printf ("FAIL: bench\n");
-
-    // Grid size
-    if (checkCmdLineFlag(argc, (const char **)argv, "grid")) {
-        grid = getCmdLineArgumentInt(argc, (const char **)argv, "grid");
-    }
-
-    // Thread block size 
-    if (checkCmdLineFlag(argc, (const char **)argv, "blk")) {
-        blk = getCmdLineArgumentInt(argc, (const char **)argv, "blk");
-    }
-    else
-      printf ("FAIL: blk\n");
-
-    time=false;
-    // Kernel time
-    if (checkCmdLineFlag(argc, (const char **)argv, "time")) {
-        long_nitocycles = ((long int) (freq * getCmdLineArgumentFloat(argc, (const char **)argv, "time")));
-        nitocycles=(unsigned int) (long_nitocycles >> BITSNOSIGNIFICATIVOS);
-        time=true;
-    }
-    else // Number of iterations
-        if (checkCmdLineFlag(argc, (const char **)argv, "nit")) {
-            nitocycles = getCmdLineArgumentInt(argc, (const char **)argv, "nit");
-        }
-        else
-            printf ("FAIL:nit and/or time\n");
-
-    printf("microKernel=%s, grid: %u, blk: %u, nit o cycles: %u\n", bench, grid, blk, nitocycles);
-
-    int kernel_result = launch_kernel(bench, grid, blk, nitocycles, time);
-
-    printf("Launch result: %d\n", kernel_result);
-
-#ifdef SIM_ERROR
-    /*** To simulate different kinds of errors that can be catched from an external script used to launch the experiment              PASS(0), SDC(1), CRASH(2), HANG = sleep(xx) + exit(3)
-    ***/
-
-    unsigned int seed = (unsigned) clock() % 1000;
-    srand( seed ); 
-    float aux = ((float) rand() / (float)(RAND_MAX));
-//    printf("RAND  seed: %u result: %f\n", seed, aux);
-
-    if (aux < 0.01) // CRASH
-      exit(4);
-    else if (aux < 0.05) { // HANG
-      sleep(30);
-      exit(3);
-    }
-    else if (aux < 0.1) // SDC
-      exit(1);
-    else // PASS
-      exit(0);
-#else
-    exit(!kernel_result);
-#endif
-
-}
-

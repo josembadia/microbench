@@ -273,13 +273,13 @@ ALL_LDFLAGS += $(addprefix -Xlinker ,$(LDFLAGS))
 ALL_LDFLAGS += $(addprefix -Xlinker ,$(EXTRA_LDFLAGS))
 
 # Common includes and paths for CUDA
-INCLUDES  := -I$(CUDA_PATH)/samples/common/inc
+INCLUDES  := -I$(CUDA_PATH)/include -I$(CUDA_PATH)/samples/common/inc
 LIBRARIES :=
 
 ################################################################################
 
 # Gencode arguments
-SMS ?= 70
+SMS ?= 53
 #SMS ?= 35 37 50 52 60 61 70 75 80 86
 
 ifeq ($(SMS),)
@@ -302,6 +302,8 @@ ifeq ($(SAMPLE_ENABLED),0)
 EXEC ?= @echo "[@]"
 endif
 
+GCC = g++
+
 ################################################################################
 
 # Target rules
@@ -316,19 +318,22 @@ else
 	@echo "Sample is ready - all dependencies have been met"
 endif
 
-micro.o: micro.cu
+# Compile CUDA file
+micro_kernels.o: micro_kernels.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 
-micro: micro.o
+# Compile C file
+micro.o: micro.c micro_kernels.o
+	$(EXEC) $(GCC) $(INCLUDES) -c $< -o $@ 
+
+# Linking
+micro: micro.o micro_kernels.o
 	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+ $(LIBRARIES)
-#	$(EXEC) mkdir -p ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
-#	$(EXEC) cp $@ ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)
 
 run: build
 	$(EXEC) ./micro
 
 clean:
-	rm -f micro micro.o
-	rm -rf ../../bin/$(TARGET_ARCH)/$(TARGET_OS)/$(BUILD_TYPE)/micro
+	rm -f micro micro.o micro_kernels.o
 
 clobber: clean
