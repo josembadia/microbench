@@ -1,27 +1,25 @@
-/*
-###########################################################################
-#  micro -- GPU reliability microbenchmarks                               #
-#                                                                         #
-#  Copyright 2023-24 Jose M. Badia <barrachi@uji.es> and                  #
-#                    German Leon <leon@uji.es>                            #
-#                                                                         #
-#  micro.cu is part of micro                                              #
-#                                                                         #
-#  micro is free software: you can redistribute it and/or modify          #
-#  it under the terms of the GNU General Public License as published by   #
-#  the Free Software Foundation; either version 3 of the License, or      #
-#  (at your option) any later version.                                    #
-#                                                                         #
-#  micro is distributed in the hope that it will be useful, but           #
-#  WITHOUT ANY WARRANTY; without even the implied warranty of             #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      #
-#  General Public License for more details.                               #
-#                                                                         #
-#  You should have received a copy of the GNU General Public License      #
-#  along with this program.  If not, see <http://www.gnu.org/licenses/>   #
-#                                                                         #
-###########################################################################
-*/
+/**************************************************************************
+*  GPU_microbench -- GPU reliability microbenchmarks                      *
+*                                                                         *
+*  Copyright 2023-24 Jose M. Badia <badia@uji.es> and                     *
+*                    German Leon <leon@uji.es>                            *
+*                                                                         *
+*  micro_kernels.cu is part of GPU_microbench                             *
+*                                                                         *
+*  GPU_microbench is free software: you can redistribute it and/or modify *
+*  it under the terms of the GNU General Public License as published by   *
+*  the Free Software Foundation; either version 3 of the License, or      *
+*  (at your option) any later version.                                    *
+*                                                                         *
+*  GPU_microbench is distributed in the hope that it will be useful, but  *
+*  WITHOUT ANY WARRANTY; without even the implied warranty of             *
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      *
+*  General Public License for more details.                               *
+*                                                                         *
+*  You should have received a copy of the GNU General Public License      *
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>   *
+*                                                                         *
+***************************************************************************/
 
 // System includes
 #include <unistd.h>
@@ -248,7 +246,6 @@ int launch_kernel(char *bench, int grid, int blk, unsigned int nitocycles, int t
             microKernel_reg_iter <<<grid, blk, blk*sizeof(btype)>>>(nitocycles, d_vadd);
        } 
     } 
-
 
     // Record the stop event
     checkCudaErrors(cudaDeviceSynchronize());

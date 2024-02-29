@@ -1,17 +1,17 @@
 /**************************************************************************
-*  micro -- GPU reliability microbenchmarks                               *
+*  GPU_microbench -- GPU reliability microbenchmarks                      *
 *                                                                         *
-*  Copyright 2023-24 Jose M. Badia <barrachi@uji.es> and                  *
+*  Copyright 2023-24 Jose M. Badia <badia@uji.es> and                     *
 *                    German Leon <leon@uji.es>                            *
 *                                                                         *
-*  micro.cu is part of micro                                              *
+*  micro.h is part of GPU_microbench                                      *
 *                                                                         *
-*  micro is free software: you can redistribute it and/or modify          *
+*  GPU_microbench is free software: you can redistribute it and/or modify *
 *  it under the terms of the GNU General Public License as published by   *
 *  the Free Software Foundation; either version 3 of the License, or      *
 *  (at your option) any later version.                                    *
 *                                                                         *
-*  micro is distributed in the hope that it will be useful, but           *
+*  GPU_microbench is distributed in the hope that it will be useful, but  *
 *  WITHOUT ANY WARRANTY; without even the implied warranty of             *
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      *
 *  General Public License for more details.                               *

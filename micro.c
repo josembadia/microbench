@@ -1,18 +1,17 @@
-/*
-***************************************************************************
-*  micro -- GPU reliability microbenchmarks                               *
+/**************************************************************************
+*  GPU_microbench -- GPU reliability microbenchmarks                      *
 *                                                                         *
-*  Copyright 2023-24 Jose M. Badia <barrachi@uji.es> and                  *
+*  Copyright 2023-24 Jose M. Badia <badia@uji.es> and                     *
 *                    German Leon <leon@uji.es>                            *
 *                                                                         *
-*  micro.c is part of micro                                              *
+*  micro.c is part of GPU_microbench                                      *
 *                                                                         *
-*  micro is free software: you can redistribute it and/or modify          *
+*  GPU_microbench is free software: you can redistribute it and/or modify *
 *  it under the terms of the GNU General Public License as published by   *
 *  the Free Software Foundation; either version 3 of the License, or      *
 *  (at your option) any later version.                                    *
 *                                                                         *
-*  micro is distributed in the hope that it will be useful, but           *
+*  GPU_microbench is distributed in the hope that it will be useful, but  *
 *  WITHOUT ANY WARRANTY; without even the implied warranty of             *
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      *
 *  General Public License for more details.                               *
@@ -20,8 +19,7 @@
 *  You should have received a copy of the GNU General Public License      *
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>   *
 *                                                                         *
-***************************************************************************
-*/
+***************************************************************************/
 
 // System includes
 #include <unistd.h>
@@ -32,6 +30,8 @@
 #include <dirent.h>
 #include <string.h>
 
+#include <cuda_runtime.h>
+
 // Helper functions and utilities to get the command line arguments
 #include <helper_string.h>
 
@@ -39,16 +39,35 @@
 
 #define DEVFREQ_PATH "/sys/class/devfreq/"
 
-#define NVIDIA_SMI_COMMAND "nvidia-smi --id=$CUDA_VISIBLE_DEVICES --query-gpu=clocks.current.sm --format=csv,noheader,nounits 2>/dev/null"
-//#define NVIDIA_SMI_COMMAND "nvidia-smi --query-gpu=clocks.max.sm --format=csv,noheader,nounits 2>/dev/null"
+#define NVIDIA_SMI_COMMAND "nvidia-smi --id=%d --query-gpu=clocks.current.sm --format=csv,noheader,nounits 2>/dev/null"
 
 long int get_first_gpu_frequency_from_nvidia_smi() {
-    FILE *nvidia_smi_pipe = popen(NVIDIA_SMI_COMMAND, "r");
+    // Get the value of CUDA_VISIBLE_DEVICES
+    char* cudaVisibleDevices = getenv("CUDA_VISIBLE_DEVICES");
+
+    int gpu_id;
+
+    if (cudaVisibleDevices == NULL) {
+        // If CUDA_VISIBLE_DEVICES is not defined, use the default value 0
+        gpu_id = 0;
+//        printf("CUDA_VISIBLE_DEVICES not defined. Using the default value: %d\n", gpu_id);
+    } else {
+        // If CUDA_VISIBLE_DEVICES is defined, convert it to an integer
+        gpu_id = atoi(cudaVisibleDevices);
+//        printf("CUDA_VISIBLE_DEVICES is set to: %s\n", cudaVisibleDevices);
+    }
+
+    // Create the NVIDIA_SMI_COMMAND using the determined GPU ID
+    char command[256];
+    snprintf(command, sizeof(command), NVIDIA_SMI_COMMAND, gpu_id);
+
+    FILE *nvidia_smi_pipe = popen(command, "r");
 
     if (nvidia_smi_pipe == NULL) {
         perror("Error opening pipe to nvidia-smi");
         exit(EXIT_FAILURE);
     }
+
     int gpu_freq;
     int scan_result = fscanf(nvidia_smi_pipe, "%d", &gpu_freq);
 
@@ -62,7 +81,7 @@ long int get_first_gpu_frequency_from_nvidia_smi() {
     // Convert frequency to Hz
     long int gpu_freq_hz = gpu_freq * 1000000;
 
-//    printf("Current GPU freq: %ld Hz\n", gpu_freq_hz);
+    // printf("Current GPU freq: %ld Hz\n", gpu_freq_hz);
 
     return gpu_freq_hz;
 }
@@ -143,7 +162,7 @@ int main(int argc, char **argv) {
     }
 
     freq=freq_now(); // Get current frequency to compute time from cycles
-    printf("GPU frequency: %lu Hz\n", freq);
+//    printf("GPU frequency: %lu Hz\n", freq);
     if (checkCmdLineFlag(argc, (const char **)argv, "bench")) {
         getCmdLineArgumentString(argc, (const char **)argv, "bench", &bench);
     }
@@ -158,6 +177,22 @@ int main(int argc, char **argv) {
     // Thread block size 
     if (checkCmdLineFlag(argc, (const char **)argv, "blk")) {
         blk = getCmdLineArgumentInt(argc, (const char **)argv, "blk");
+
+        int deviceId;
+        cudaGetDevice(&deviceId);
+
+        cudaDeviceProp deviceProp;
+        cudaGetDeviceProperties(&deviceProp, deviceId);
+
+        int maxThreadsPerBlock = deviceProp.maxThreadsPerBlock;
+
+
+        if (blk > maxThreadsPerBlock) {
+            printf("Error: User is launching more threads in a block than supported by the GPU: %d!\n", maxThreadsPerBlock);
+        }
+
+	return 0;
+
     }
     else
       printf ("FAIL: blk\n");
@@ -176,7 +211,7 @@ int main(int argc, char **argv) {
         else
             printf ("FAIL:nit and/or time\n");
 
-    printf("microKernel=%s, grid: %u, blk: %u, nit o cycles: %u\n", bench, grid, blk, nitocycles);
+//    printf("microKernel=%s, grid: %u, blk: %u, nit o cycles: %u\n", bench, grid, blk, nitocycles);
 
     int kernel_result = launch_kernel(bench, grid, blk, nitocycles, time);
 
